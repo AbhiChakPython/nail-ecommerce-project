@@ -22,7 +22,12 @@ if not SECRET_KEY:
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ["true", "1", "yes"]
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+ALLOWED_HOSTS = [
+    "web-production-0354e.up.railway.app",
+    "127.0.0.1",
+    "localhost",
+    "0.0.0.0",
+]
 
 # ===============================
 # Database (override base if needed)
