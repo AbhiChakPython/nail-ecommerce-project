@@ -37,3 +37,7 @@ Thumbs.db
 personal/
 
 !*.example
+
+# Docker deployment files (optional to ignore)
+Dockerfile
+docker-compose.yml

@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Optional: Load Production Environment Variables
 # ===============================
 # Only needed if you want to load .env.prod inside Docker (optional)
-load_dotenv(BASE_DIR / ".env.prod")
+# load_dotenv(BASE_DIR / ".env.prod")
 
 # ===============================
 # Core Production Settings
@@ -21,7 +21,8 @@ if not SECRET_KEY:
     raise ValueError("Missing SECRET_KEY in production environment!")
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ["true", "1", "yes"]
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 
 # ===============================
 # Database (override base if needed)
@@ -35,6 +36,15 @@ DATABASES = {
         ssl_require=DB_SSL_REQUIRED
     )
 }
+
+# ===============================
+# Static & Media
+# ===============================
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # ===============================
 # Third-Party Integrations
@@ -59,3 +69,41 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True").lower() in ["true", "1", "yes"]
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "True").lower() in ["true", "1", "yes"]
 CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "True").lower() in ["true", "1", "yes"]
+
+# ===============================
+# WSGI
+# ===============================
+WSGI_APPLICATION = 'config.wsgi.application'
+
+
+# ===============================
+# Optional Logging (file logging still works if needed)
+# ===============================
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {'format': '[{asctime}] {levelname} {name}: {message}', 'style': '{'},
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': LOG_DIR / 'application.log',
+            'when': 'midnight',
+            'backupCount': 7,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+    },
+    'root': {'handlers': ['file'], 'level': 'WARNING'},
+}
+
+# ===============================
+# Auth URLs
+# ===============================
+LOGIN_URL = '/users/login/'
+LOGIN_REDIRECT_URL = '/'
