@@ -26,10 +26,6 @@ media/services/*
 # Staticfiles (collected assets)
 staticfiles/
 
-# Logs
-logs/
-*.log
-
 # Mac/Windows metadata
 .DS_Store
 Thumbs.db
