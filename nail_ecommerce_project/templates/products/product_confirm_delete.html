@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="container py-5">
+    <h2 class="text-xl font-semibold mb-4">Are you sure you want to delete <strong>{{ object.name }}</strong>?</h2>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, delete</button>
+      <a href="{% url 'products:product_detail' slug=object.slug %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+{% endblock %}

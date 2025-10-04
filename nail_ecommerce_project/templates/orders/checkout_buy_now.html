@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold mb-6 text-pink-600">Buy Now - Checkout</h2>
+
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="px-4 py-2 rounded text-white {{ message.tags|default:'bg-blue-600' }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div id="form-error" class="hidden bg-red-100 text-red-700 p-3 rounded mb-4"></div>
+
+    <form method="POST" id="razorpay-form">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-10 gap-6 mb-8">
+
+            <!-- 📨 Shipping Information (70%) -->
+            <div class="md:col-span-7 bg-pink-100/80 p-6 rounded-lg shadow-md">
+                <div class="mb-6 border-b border-pink-300 pb-3 flex items-center space-x-2">
+                    <svg class="w-6 h-6 text-pink-700" fill="none" stroke="currentColor" stroke-width="2"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18"/>
+                    </svg>
+                    <h3 class="text-2xl font-bold text-pink-700">Shipping Information</h3>
+                </div>
+
+                {% if form.errors %}
+                <div class="bg-red-100 text-red-700 p-3 rounded mb-4">
+                    Please correct the highlighted errors below.
+                </div>
+                {% endif %}
+
+                <div class="space-y-4 text-sm">
+                    {% for field in form %}
+                        {% if field.name == "use_for_home_service" %}
+                        <!-- Customized layout for the checkbox field -->
+                        <div class="flex flex-col md:flex-row md:items-center md:space-x-4">
+                            <label for="{{ field.id_for_label }}" class="md:w-4/5 font-medium text-gray-700">
+                                {{ forloop.counter }}. {{ field.label }}
+                            </label>
+                            <div class="md:w-1/5 flex items-center">
+                                {{ field|add_class:"h-5 w-5 text-pink-600 border-gray-300 rounded" }}
+                                {% if field.errors %}
+                                <p class="text-sm text-red-600 mt-1">{{ field.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <!-- Default layout for other fields -->
+                        <div class="flex flex-col md:flex-row md:items-center md:space-x-4">
+                            <label for="{{ field.id_for_label }}" class="md:w-56 font-medium text-gray-700">
+                                {{ forloop.counter }}. {{ field.label }}
+                            </label>
+                            <div class="flex-1">
+                                {{ field|add_class:"w-full md:w-96 px-3 py-2 border rounded" }}
+                                {% if field.errors %}
+                                <p class="text-sm text-red-600 mt-1">{{ field.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 🧾 Order Summary (30%) -->
+            <div class="md:col-span-3 bg-pink-200/70 p-5 rounded-lg shadow-md">
+                <h3 class="text-xl font-bold text-pink-600 mb-4 border-b pb-2 flex items-center">
+                    🧾 <span class="ml-2">Order Summary</span>
+                </h3>
+
+                <div class="space-y-3">
+                    {% if variant.product.thumbnail %}
+                    <img src="{{ variant.product.thumbnail.url }}" alt="{{ variant.product.name }}"
+                         class="w-full object-cover rounded border border-pink-200 shadow-sm mb-2">
+                    {% endif %}
+
+                    <p class="text-lg font-semibold text-gray-800">{{ variant.product.name }}</p>
+                    <p class="text-sm text-gray-600">Variant: {{ variant.size }} / {{ variant.color }}</p>
+                    <p class="text-sm text-gray-600">Qty: {{ quantity }}</p>
+
+                    <p class="text-sm text-gray-700">
+                        Price per item:
+                        {% if unit_price < variant.price %}
+                        <span class="line-through text-gray-400">₹{{ variant.price|floatformat:2 }}</span>
+                        <span class="text-green-600 font-semibold ml-1">₹{{ unit_price|floatformat:2 }}</span>
+                        {% else %}
+                        ₹{{ unit_price|floatformat:2 }}
+                        {% endif %}
+                    </p>
+
+                    <hr class="my-2 border-pink-200">
+
+                    <div class="text-sm space-y-1">
+                        <div class="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>₹{{ total_price|floatformat:2 }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Shipping</span>
+                            <span class="text-green-700 font-medium">Free</span>
+                        </div>
+                        <hr class="my-1 border-gray-300">
+                        <div class="flex justify-between text-lg font-bold">
+                            <span>Total</span>
+                            <span class="text-pink-600">₹{{ total_price|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Razorpay hidden fields -->
+        <input type="hidden" name="razorpay_payment_id" id="rzp_payment_id">
+        <input type="hidden" name="razorpay_signature" id="rzp_signature">
+        <input type="hidden" name="razorpay_order_id" value="{{ razorpay_order_id }}">
+
+        <!-- Important: type="button" to prevent immediate form submit -->
+        <button type="button" id="rzp-button" aria-label="Confirm and Pay"
+                class="bg-pink-600 text-white px-6 py-2 rounded hover:bg-pink-700 transition">
+            Confirm & Pay
+        </button>
+    </form>
+</div>
+
+<!-- Razorpay Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    const options = {
+        key: "{{ razorpay_key_id }}",
+        amount: {{ amount }},
+        currency: "INR",
+        name: "Rupa's Nails Xtension Hub",
+        order_id: "{{ razorpay_order_id }}",
+        prefill: {
+            name: "{{ request.user.full_name|default:''|escapejs }}",
+            email: "{{ request.user.email|default:''|escapejs }}",
+            contact: "{{ request.user.phone_number|default:''|escapejs }}"
+        },
+        handler: function (response) {
+            const form = document.getElementById('razorpay-form');
+            form.action = "{% url 'orders:verify_buy_now_payment' %}";
+            document.getElementById('rzp_payment_id').value = response.razorpay_payment_id;
+            document.getElementById('rzp_signature').value = response.razorpay_signature;
+            form.submit();
+        }
+    };
+
+    console.groupCollapsed("🧾 Razorpay Prefill Debug");
+    console.log("User:", options.prefill.name);
+    console.log("Email:", options.prefill.email);
+    console.log("Phone:", options.prefill.contact);
+    console.groupEnd();
+
+    const rzp = new Razorpay(options);
+
+    // Open Razorpay only when user clicks the button
+    document.getElementById("rzp-button").onclick = function (e) {
+        e.preventDefault();
+
+        const form = document.getElementById('razorpay-form');
+        const requiredFields = form.querySelectorAll("input[required], textarea[required]");
+        const errorBox = document.getElementById("form-error");
+
+        let valid = true;
+
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add("border-red-500", "bg-red-50");
+                valid = false;
+            } else {
+                field.classList.remove("border-red-500", "bg-red-50");
+            }
+        });
+
+        if (!valid) {
+            errorBox.textContent = "Please fill all required fields before proceeding.";
+            errorBox.classList.remove("hidden");
+
+            setTimeout(() => {
+                errorBox.classList.add("hidden");
+            }, 5000);
+
+            return;
+        }
+
+        // If form is valid, proceed to Razorpay
+        rzp.open();
+    };
+
+    // Autofocus first input field (shipping form)
+    window.onload = function () {
+        const firstInput = document.querySelector("form input[type='text'], form input[type='email'], form input[type='tel']");
+        if (firstInput) {
+            firstInput.focus();
+        }
+    };
+</script>
+
+{% endblock %}

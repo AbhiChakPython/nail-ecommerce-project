@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Unauthorized Access{% endblock %}
+{% block content %}
+<div class="min-h-screen flex flex-col justify-center items-center bg-pink-50 text-center px-4">
+  <h1 class="text-4xl font-bold text-pink-600 mb-4">401 - Unauthorized</h1>
+  <p class="text-gray-700 text-lg mb-6">You must be logged in to access this page.</p>
+  <a href="{% url 'users:login' %}" class="bg-pink-600 text-white px-6 py-2 rounded-md hover:bg-pink-700 transition">
+    Login
+  </a>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+Hi {{ booking.customer.get_full_name }},
+Your booking #{{ booking.id }} has been received.
+
+Service: {{ booking.service.name }}
+Date: {{ booking.date }}
+Time: {{ booking.time_slot }}
+
+We’ll notify you once it is confirmed.
+- Rupa's Nails Xtension Hub

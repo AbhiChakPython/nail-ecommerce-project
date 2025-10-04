@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-10 px-4 text-center">
+    <h1 class="text-3xl font-bold mb-4 inline-block">
+        Our Services
+        {% if user.is_superuser %}
+        <span class="ml-2 inline-block bg-yellow-400 text-black text-xs font-semibold px-2 py-1 rounded align-middle">
+                Admin Mode
+            </span>
+        {% endif %}
+    </h1>
+
+    {% if request.user.is_superuser %}
+    <div class="flex justify-end mb-4">
+        <a href="{% url 'services:service_create' %}"
+           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">
+            + <span class="font-semibold">Add Service</span> <span class="text-xs text-gray-300">(Admin)</span>
+
+        </a>
+    </div>
+    {% endif %}
+
+    <form method="get" class="max-w-xl mx-auto mb-6">
+        <div class="flex items-center border border-pink-300 rounded-lg overflow-hidden shadow-sm">
+            <input type="text" name="q"
+                   placeholder="Search services..."
+                   value="{{ q }}"
+                   class="w-full px-4 py-2 text-gray-700 focus:outline-none">
+            <button type="submit"
+                    class="bg-pink-500 text-white px-4 py-2 hover:bg-pink-600 transition">
+                Search
+            </button>
+        </div>
+    </form>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {% for service in services %}
+                <div class="bg-white shadow rounded-lg overflow-hidden hover:shadow-md transition relative">
+                    <a href="{% url 'services:service_detail' service.slug %}">
+                        {% if service.featured_image %}
+                        <img src="{{ service.featured_image.url }}" alt="{{ service.title }}" class="w-full h-48 object-cover">
+                        {% endif %}
+                    </a>
+                    <div class="p-4">
+                        <h2 class="text-lg font-semibold">
+                            <a href="{% url 'services:service_detail' service.slug %}" title="{{ service.title }}">
+                                {{ service.title }}
+                            </a>
+                        </h2>
+                        <p class="text-sm text-gray-600">{{ service.short_description|truncatewords:12 }}</p>
+                        <p class="mt-2 font-bold text-pink-600">₹{{ service.price }}</p>
+
+                        <div class="mt-4 flex justify-center">
+                            <a href="{% url 'services:service_detail' service.slug %}"
+                               class="bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-4 rounded transition">
+                               More Details
+                            </a>
+
+                            {% if user.is_superuser %}
+                            <a href="{% url 'services:service_update' slug=service.slug %}"
+                               class="text-blue-600 text-sm hover:underline"
+                               title="Edit in Frontend">✏️ Edit</a>
+                            <a href="{% url 'services:service_delete' slug=service.slug %}"
+                               class="text-red-600 text-sm hover:underline"
+                               title="Delete in Frontend">🗑️ Delete</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+        {% endfor %}
+    </div>
+    <!-- 👇 Pagination Block -->
+    {% if is_paginated %}
+    <div class="flex justify-center mt-8 space-x-2">
+        {% if page_obj.has_previous %}
+        <a href="?q={{ q }}&page={{ page_obj.previous_page_number }}"
+           class="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">Previous</a>
+        {% endif %}
+
+        <span class="px-4 py-2 bg-gray-100 text-gray-700 rounded">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?q={{ q }}&page={{ page_obj.next_page_number }}"
+           class="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

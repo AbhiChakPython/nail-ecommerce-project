@@ -1,0 +1,8 @@
+Hi {{ order.full_name }},
+
+Thank you for placing your order #{{ order.id }} at Rupa’s Nails Xtension Hub.
+
+We are processing your order and will keep you updated.
+
+Regards,
+Rupa's Nails Team

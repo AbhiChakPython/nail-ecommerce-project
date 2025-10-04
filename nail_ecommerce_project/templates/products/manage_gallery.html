@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white p-6 shadow mt-10 rounded">
+    <h2 class="text-2xl font-bold mb-4">Manage Gallery for: {{ product.name }}</h2>
+
+    <!-- Upload Form -->
+    <form method="post" enctype="multipart/form-data" class="mb-6">
+        {% csrf_token %}
+        {{ form.image.label_tag }}
+
+        {% if form.image.errors %}
+        <ul class="text-red-600 text-sm mb-2" id="id_image_error">
+            {% for error in form.image.errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% render_field form.image class="block border px-3 py-2 rounded w-full" aria-describedby="id_image_error"
+        aria-invalid="true" %}
+
+        <button type="submit" class="mt-2 bg-black text-white px-4 py-2 rounded">Upload Image</button>
+    </form>
+
+    <!-- Gallery Display -->
+    <div class="grid grid-cols-3 gap-4">
+        {% for image in gallery %}
+        <div class="relative group border rounded overflow-hidden">
+            <img src="{{ image.image.url }}" alt="Gallery Image" class="object-cover h-40 w-full">
+            <!-- 🗑️ Delete button -->
+            <form method="post" action="{% url 'products:delete_gallery_image' image.pk %}"
+                  class="absolute top-1 right-1">
+                {% csrf_token %}
+                <button type="submit" title="Delete Image"
+                        class="bg-red-600 text-white px-2 py-1 text-xs rounded hover:bg-red-700">
+                    ×
+                </button>
+            </form>
+        </div>
+        {% empty %}
+        <p class="col-span-3 text-gray-500">No gallery images yet.</p>
+        {% endfor %}
+    </div>
+
+    <div class="mt-6">
+        <a href="{% url 'products:product_list' %}" class="text-sm text-gray-600 hover:underline">← Back to Products</a>
+    </div>
+</div>
+{% endblock %}

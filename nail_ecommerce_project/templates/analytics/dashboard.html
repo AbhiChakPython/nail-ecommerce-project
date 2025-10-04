@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-pink-700">📊 Analytics Dashboard</h1>
+</div>
+
+<!-- 🔍 Date Range Filter Form -->
+<form method="get" class="flex flex-wrap items-end gap-4 mb-6">
+    <div>
+        <label for="start_date" class="block text-sm font-semibold text-gray-700">From</label>
+        <input type="date" id="start_date" name="start_date"
+               value="{{ request.GET.start_date|default:start_date|stringformat:'Y-m-d' }}"
+               required class="border rounded px-3 py-2 w-full">
+    </div>
+    <div>
+        <label for="end_date" class="block text-sm font-semibold text-gray-700">To</label>
+        <input type="date" id="end_date" name="end_date"
+               value="{{ request.GET.end_date|default:end_date|stringformat:'Y-m-d' }}"
+               required class="border rounded px-3 py-2 w-full">
+    </div>
+    <div>
+        <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white font-semibold px-4 py-2 rounded">
+            Apply Filter
+        </button>
+    </div>
+    {% if sales_data %}
+    <div>
+        <a href="{% url 'analytics:export_csv' %}?start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}"
+           class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">
+            ⬇️ Export CSV
+        </a>
+    </div>
+    {% endif %}
+</form>
+
+<!-- Tabs -->
+<div x-data="{ tab: 'sales' }">
+    <nav class="mb-6 border-b border-pink-200 flex space-x-6 text-pink-700 font-semibold">
+        <button :class="{ 'border-b-2 border-pink-600': tab === 'sales' }" class="py-2 px-4" @click="tab = 'sales'">💰 Sales</button>
+        <button :class="{ 'border-b-2 border-pink-600': tab === 'customers' }" class="py-2 px-4" @click="tab = 'customers'">🧍‍♀️ Customer Segments</button>
+        <button :class="{ 'border-b-2 border-pink-600': tab === 'forecast' }" class="py-2 px-4" @click="tab = 'forecast'">📈 Forecast</button>
+        <button :class="{ 'border-b-2 border-pink-600': tab === 'comparison' }" class="py-2 px-4" @click="tab = 'comparison'">📦💅 Compare</button>
+    </nav>
+
+    <!-- 🧾 Sales Tab -->
+    <div x-show="tab === 'sales'" x-cloak>
+        {% if sales_data %}
+        <div class="grid md:grid-cols-2 gap-8 mb-6">
+            <div class="bg-white p-6 shadow rounded">
+                <h3 class="text-xl font-bold text-pink-600 mb-4">🛍️ Product Sales</h3>
+                <ul class="text-sm space-y-1">
+                    <li><strong>Total Revenue:</strong> ₹{{ sales_data.orders.revenue }}</li>
+                    <li><strong>Items Sold:</strong> {{ sales_data.orders.count }}</li>
+                </ul>
+            </div>
+            <div class="bg-white p-6 shadow rounded">
+                <h3 class="text-xl font-bold text-pink-600 mb-4">💅 Booking Sales</h3>
+                <ul class="text-sm space-y-1">
+                    <li><strong>Total Revenue:</strong> ₹{{ sales_data.bookings.revenue }}</li>
+                    <li><strong>Bookings Completed:</strong> {{ sales_data.bookings.count }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 shadow rounded mb-6">
+            <h3 class="text-xl font-bold text-pink-600 mb-4">📊 Total Overview</h3>
+            <ul class="text-sm space-y-1">
+                <li><strong>Combined Revenue:</strong> ₹{{ sales_data.totals.revenue }}</li>
+                <li><strong>Estimated Profit:</strong> ₹{{ sales_data.totals.estimated_profit }}</li>
+            </ul>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="text-lg font-semibold mb-2 text-gray-700">📦 Product Revenue Breakdown</h4>
+                <div id="product-chart"></div>
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold mb-2 text-gray-700">💅 Booking Revenue Breakdown</h4>
+                <div id="booking-chart"></div>
+            </div>
+        </div>
+        <!-- ✅ Plotly before JSON -->
+        <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+        {{ product_chart_json|safe }}
+        {{ booking_chart_json|safe }}
+
+        {% else %}
+            <div class="bg-white p-6 shadow rounded text-center">
+                <h3 class="text-xl font-bold text-pink-600 mb-2">💰 Sales Overview</h3>
+                <p class="text-sm text-red-600">⚠️ No sales data found for the selected date range.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 👥 Customers Tab -->
+    <div x-show="tab === 'customers'" x-cloak>
+        <div class="bg-white p-6 shadow rounded text-center">
+            <h3 class="text-xl font-bold text-pink-600 mb-4">🧍‍♀️ Customer Segmentation</h3>
+            {% if customer_segments %}
+                <div class="overflow-x-auto text-left">
+                    <table class="w-full text-sm text-gray-600 border mb-6">
+                        <thead class="text-xs text-gray-700 uppercase bg-pink-100 border-b">
+                        <tr>
+                            <th class="px-4 py-3">Customer</th>
+                            <th class="px-4 py-3">Email</th>
+                            <th class="px-4 py-3 text-center">Orders</th>
+                            <th class="px-4 py-3 text-center">Bookings</th>
+                            <th class="px-4 py-3 text-right">Total Spend</th>
+                            <th class="px-4 py-3 text-center">Last Active</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for seg in customer_segments %}
+                        <tr class="border-b hover:bg-pink-50">
+                            <td class="px-4 py-2 font-medium text-gray-800">{{ seg.name }}</td>
+                            <td class="px-4 py-2">{{ seg.email }}</td>
+                            <td class="px-4 py-2 text-center">{{ seg.order_count }}</td>
+                            <td class="px-4 py-2 text-center">{{ seg.booking_count }}</td>
+                            <td class="px-4 py-2 text-right">₹{{ seg.total_spent }}</td>
+                            <td class="px-4 py-2 text-center">{{ seg.last_active|date:"Y-m-d" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-red-500 py-4">⚠️ No customer records available.</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-sm text-red-600">⚠️ No customer data found for the selected period.</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-white p-6 shadow rounded text-center mt-6">
+            <h3 class="text-lg font-bold text-pink-600 mb-2">📊 Customer Behavior Insights</h3>
+            {% if customer_pie_json and visit_bar_json %}
+                <div class="grid md:grid-cols-2 gap-6 text-left">
+                    <div>
+                        <h4 class="text-lg font-semibold mb-2 text-gray-700">💰 Top Customer Revenue</h4>
+                        <div id="customer-pie"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-2 text-gray-700">🔁 Visit Frequency</h4>
+                        <div id="visit-bar"></div>
+                    </div>
+                </div>
+                <!-- ✅ Plotly before JSON -->
+                <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+                <!-- JSON injections -->
+                {{ customer_pie_json|safe }}
+                {{ visit_bar_json|safe }}
+            {% else %}
+                <p class="text-sm text-red-600">⚠️ No customer insights available for the selected period.</p>
+            {% endif %}
+        </div>
+    </div>
+
+
+    <!-- 📈 Forecast Tab -->
+    <div x-show="tab === 'forecast'" x-cloak>
+        <div class="bg-white p-6 shadow rounded text-center mb-4">
+            <h3 class="text-xl font-bold text-pink-600 mb-2">📈 Sales Forecasting</h3>
+            <p class="text-sm text-gray-600">Predictions based on recent trends and seasonality.</p>
+        </div>
+
+        {% if forecast_order_chart_json or forecast_booking_chart_json or forecast_chart_json %}
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+            {% if forecast_order_chart_json %}
+            <div>
+                <h4 class="text-lg font-semibold mb-2 text-gray-700">📈 Product Orders Forecast</h4>
+                <div id="forecast-order"></div>
+                <!-- ✅ Plotly -->
+                <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+                {{ forecast_order_chart_json|safe }}
+            </div>
+            {% endif %}
+            {% if forecast_booking_chart_json %}
+            <div>
+                <h4 class="text-lg font-semibold mb-2 text-gray-700">📈 Booking Forecast</h4>
+                <div id="forecast-booking"></div>
+                <!-- ✅ Plotly -->
+                <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+                {{ forecast_booking_chart_json|safe }}
+            </div>
+            {% endif %}
+        </div>
+        {% if forecast_chart_json %}
+        <h3 class="text-xl font-bold text-pink-600 mb-4">📊 Revenue Forecast</h3>
+        <div id="forecast-chart"></div>
+        {{ forecast_chart_json|safe }}
+        {% endif %}
+        {% else %}
+        <p class="text-sm text-red-600">⚠️ Forecast data not available for the selected period.</p>
+        {% endif %}
+    </div>
+
+    <!-- 📦💅 Compare Tab -->
+    <div x-show="tab === 'comparison'" x-cloak>
+        <h3 class="text-xl font-bold text-pink-600 mb-4">Top Products vs Services (Revenue)</h3>
+        {% if comparison_chart_json %}
+        <div id="product-service-comparison"></div>
+        <!-- ✅ Plotly -->
+        <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+        {{ comparison_chart_json|safe }}
+        {% else %}
+        <p class="text-sm text-red-600">⚠️ Comparison data not available for this period.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+{% endblock %}

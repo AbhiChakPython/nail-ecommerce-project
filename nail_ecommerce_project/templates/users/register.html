@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register | Rupa's Nails Xtension Hub{% endblock %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-screen bg-pink-50">
+    <div class="w-full max-w-md p-8 bg-white rounded-xl shadow-lg space-y-6"
+         x-data="{ submitting: false, showPassword: false }">
+        <h2 class="text-2xl font-bold text-center text-pink-600">Create an Account</h2>
+        <p class="text-center text-gray-600">Join the Nails Xtension Hub and glam up!</p>
+
+        {% if form.non_field_errors %}
+        <div class="text-sm text-white p-2 rounded bg-red-500">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <form method="POST" class="space-y-4" @submit.prevent="submitting = true; $el.submit()">
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div>
+                <label for="username" class="block mb-1 text-gray-700">Username <span class="text-red-500">*</span></label>
+                <input type="text" name="username" id="username"
+                       value="{{ form.username.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                       required autocomplete="username">
+                {% if form.username.errors %}
+                <p class="text-sm text-red-600">{{ form.username.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Full Name -->
+            <div>
+                <label for="full_name" class="block mb-1 text-gray-700">Full Name <span class="text-red-500">*</span></label>
+                <input type="text" name="full_name" id="full_name"
+                       value="{{ form.full_name.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                       required>
+                {% if form.full_name.errors %}
+                <p class="text-sm text-red-600">{{ form.full_name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label for="email" class="block mb-1 text-gray-700">Email <span class="text-red-500">*</span></label>
+                <input type="email" name="email" id="email"
+                       value="{{ form.email.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                       required autocomplete="email">
+                {% if form.email.errors %}
+                <p class="text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Phone Number -->
+            <div>
+                <label for="phone_number" class="block mb-1 text-gray-700">Phone Number <span class="text-red-500">*</span></label>
+                <input type="tel" name="phone_number" id="phone_number"
+                       value="{{ form.phone_number.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                       required autocomplete="tel">
+                {% if form.phone_number.errors %}
+                <p class="text-sm text-red-600">{{ form.phone_number.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label for="password1" class="block mb-1 text-gray-700">Password <span class="text-red-500">*</span></label>
+                <div class="relative">
+                    <input :type="showPassword ? 'text' : 'password'" name="password1" id="password1"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                           required autocomplete="new-password">
+                    <button type="button" @click="showPassword = !showPassword"
+                            class="absolute right-3 top-2 text-gray-500 hover:text-gray-700 text-sm focus:outline-none">
+                        <span x-text="showPassword ? 'Hide' : 'Show'"></span>
+                    </button>
+                </div>
+                {% if form.password1.errors %}
+                <p class="text-sm text-red-600">{{ form.password1.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Confirm Password -->
+            <div>
+                <label for="password2" class="block mb-1 text-gray-700">Confirm Password <span class="text-red-500">*</span></label>
+                <div class="relative">
+                    <input :type="showPassword ? 'text' : 'password'" name="password2" id="password2"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                           required autocomplete="new-password">
+                    <button type="button" @click="showPassword = !showPassword"
+                            class="absolute right-3 top-2 text-gray-500 hover:text-gray-700 text-sm focus:outline-none">
+                        <span x-text="showPassword ? 'Hide' : 'Show'"></span>
+                    </button>
+                </div>
+                {% if form.password2.errors %}
+                <p class="text-sm text-red-600">{{ form.password2.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- ========== ADDRESS FORM ========== -->
+            <h3 class="text-lg font-semibold text-gray-800 pt-4 border-t border-gray-200">Address Details</h3>
+
+            <!-- Address Line 1 -->
+            <div>
+                <label for="address_line1" class="block mb-1 text-gray-700">Flat / House No., Building <span class="text-red-500">*</span></label>
+                <input type="text" name="address_line1" id="address_line1"
+                       value="{{ address_form.address_line1.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                       required>
+                {% if address_form.address_line1.errors %}
+                <p class="text-sm text-red-600">{{ address_form.address_line1.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Address Line 2 -->
+            <div>
+                <label for="address_line2" class="block mb-1 text-gray-700">Area / Street / Sector <span class="text-red-500">*</span></label>
+                <input type="text" name="address_line2" id="address_line2"
+                       value="{{ address_form.address_line2.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                       required>
+                {% if address_form.address_line2.errors %}
+                <p class="text-sm text-red-600">{{ address_form.address_line2.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Landmark -->
+            <div>
+                <label for="landmark" class="block mb-1 text-gray-700">Landmark</label>
+                <input type="text" name="landmark" id="landmark"
+                       value="{{ address_form.landmark.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500">
+                {% if address_form.landmark.errors %}
+                <p class="text-sm text-red-600">{{ address_form.landmark.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- City -->
+            <div>
+                <label for="city" class="block mb-1 text-gray-700">City <span class="text-red-500">*</span></label>
+                <input type="text" name="city" id="city"
+                       value="{{ address_form.city.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                       required>
+                {% if address_form.city.errors %}
+                <p class="text-sm text-red-600">{{ address_form.city.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Pincode -->
+            <div>
+                <label for="pincode" class="block mb-1 text-gray-700">Pincode <span class="text-red-500">*</span></label>
+                <input type="text" name="pincode" id="pincode"
+                       value="{{ address_form.pincode.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                       required>
+                {% if address_form.pincode.errors %}
+                <p class="text-sm text-red-600">{{ address_form.pincode.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- State -->
+            <div>
+                <label for="state" class="block mb-1 text-gray-700">State <span class="text-red-500">*</span></label>
+                <input type="text" name="state" id="state"
+                       value="{{ address_form.state.value|default_if_none:'' }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                       required>
+                {% if address_form.state.errors %}
+                <p class="text-sm text-red-600">{{ address_form.state.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Use for Home Service -->
+            <div class="flex items-center">
+                <input type="checkbox" name="use_for_home_service" id="use_for_home_service"
+                       class="h-4 w-4 text-pink-600 border-gray-300 focus:ring-pink-500"
+                       {% if address_form.use_for_home_service.value %}checked{% endif %}>
+                <label for="use_for_home_service" class="ml-2 text-sm text-gray-700">Use this address for home service</label>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit"
+                    class="w-full py-2 px-4 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition flex justify-center items-center"
+                    :disabled="submitting">
+                <template x-if="submitting">
+                    <svg class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                         viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                </template>
+                <span x-text="submitting ? 'Registering...' : 'Register'"></span>
+            </button>
+        </form>
+
+        <p class="text-sm text-center text-gray-600 mt-4">
+            Already have an account?
+            <a href="{% url 'users:login' %}" class="text-pink-600 hover:underline">Login</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

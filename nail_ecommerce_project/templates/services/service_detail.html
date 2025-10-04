@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold mb-4">{{ service.title }}
+
+        {% if request.user.is_superuser %}
+        <div class="flex space-x-3 mt-4">
+            <a href="{% url 'services:service_update' slug=service.slug %}"
+               class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm">
+                Edit
+            </a>
+            <a href="{% url 'services:service_delete' slug=service.slug %}"
+               class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                Delete
+            </a>
+            <a href="{% url 'services:service_manage_gallery' slug=service.slug %}"
+               class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                Manage Gallery
+            </a>
+        </div>
+        {% endif %}
+
+        {% if user.is_superuser %}
+        <span class="ml-2 inline-block bg-yellow-400 text-black text-xs font-semibold px-2 py-1 rounded">Admin Mode</span>
+        {% endif %}
+    </h1>
+
+    {% if service.featured_image %}
+    <img src="{{ service.featured_image.url }}" alt="{{ service.title }}" class="w-full h-64 object-cover rounded mb-6">
+    {% endif %}
+
+    <p class="text-gray-700 mb-4">{{ service.short_description }}</p>
+    <p class="text-pink-600 font-semibold text-xl mb-2">₹{{ service.price }}</p>
+    <p class="text-sm text-gray-500">Duration: {{ service.duration_minutes }} minutes</p>
+
+    {% if service.updated_at %}
+    <p class="text-xs text-gray-400 mt-1">Last updated: {{ service.updated_at|date:"M d, Y H:i" }}</p>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'bookings:booking_create' %}?service={{ service.id }}"
+           class="bg-pink-600 text-white px-5 py-2 rounded hover:bg-pink-700"
+           title="Proceed to book this service">
+            📅 Book Now
+        </a>
+    </div>
+
+    {% if service.gallery_images.all %}
+    <div class="mt-8">
+        <h2 class="text-xl font-semibold mb-3">Gallery</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {% for img in service.gallery_images.all %}
+            <div>
+                <img src="{{ img.image_file.url }}" alt="{{ img.caption }}" class="w-full h-40 object-cover rounded">
+                {% if img.caption %}
+                <p class="text-xs text-gray-500 mt-1">{{ img.caption }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

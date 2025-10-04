@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Booking Confirmed</title></head>
+<body>
+<p>Hi {{ booking.customer.get_full_name }},</p>
+<p>Your booking <strong>#{{ booking.id }}</strong> has been <strong>confirmed</strong>.</p>
+<ul>
+  <li><strong>Service:</strong> {{ booking.service.name }}</li>
+  <li><strong>Date:</strong> {{ booking.date }}</li>
+  <li><strong>Time:</strong> {{ booking.time_slot }}</li>
+</ul>
+<p>We look forward to seeing you!</p>
+<p>Regards,<br>Rupa's Nails Xtension Hub</p>
+</body>
+</html>

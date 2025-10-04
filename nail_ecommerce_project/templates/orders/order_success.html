@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8 text-center" role="main">
+    <h1 class="text-2xl font-bold mb-4">Thank you for your order!</h1>
+    <p class="mb-2">Your order number is <span class="font-semibold">#{{ order.id }}</span>.</p>
+    <p class="text-sm text-gray-500 mb-4">Placed on: {{ order.created_at|date:"F j, Y, g:i A" }}</p>
+
+    <h3 class="text-xl font-semibold mb-2">Order Summary:</h3>
+        <div class="bg-white shadow rounded p-4 mb-6">
+            {% if order.items.count %}
+                <ul class="space-y-2 text-center">
+                    {% for item in order.items.all %}
+                        <li>
+                            {% if order.items.count == 1 and item.quantity == 1 %}
+                                {{ item.product_variant.product.name }}
+                                ({{ item.product_variant.size }}/{{ item.product_variant.color }}) –
+                                <strong>₹{{ item.line_total|floatformat:2 }}</strong>
+                            {% else %}
+                                {{ item.quantity }} × {{ item.product_variant.product.name }}
+                                ({{ item.product_variant.size }}/{{ item.product_variant.color }}) –
+                                {% if item.quantity > 1 %}
+                                    ₹{{ item.price_at_order|floatformat:2 }} each =
+                                {% endif %}
+                                <strong>₹{{ item.line_total|floatformat:2 }}</strong>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-red-500">No items found in this order.</p>
+            {% endif %}
+        </div>
+
+        {% if order.status != 'ORDERED' %}
+            <p class="text-sm text-yellow-600 font-medium">Status: {{ order.status }}</p>
+        {% endif %}
+
+    <p class="text-lg font-bold mb-4">Total: ₹{{ order.total_price|floatformat:2 }}</p>
+    <p class="text-sm text-gray-600 mb-6">A confirmation email has been sent to you.</p>
+
+    <div>
+        <a href="{% url 'products:product_list' %}"
+           class="bg-pink-600 text-white px-6 py-2 rounded hover:bg-pink-700 transition">
+            Continue Shopping
+        </a>
+        <a href="{% url 'orders:order_list' %}"
+           class="text-pink-600 font-medium border border-pink-600 px-6 py-2 rounded hover:bg-pink-100 transition">
+            Check My Orders
+        </a>
+    </div>
+</div>
+{% endblock %}

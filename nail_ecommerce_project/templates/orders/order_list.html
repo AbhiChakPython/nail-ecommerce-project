@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Orders | Rupa's Nails Xtension Hub{% endblock %}
+
+{% block content %}
+<div x-data="{ showCancelModal: false, cancelForm: null }" @keydown.escape.window="showCancelModal = false">
+    <div class="min-h-screen bg-pink-50 py-10">
+        <div class="max-w-5xl mx-auto bg-white rounded-xl shadow p-6">
+            <h1 class="text-2xl font-bold text-pink-600 mb-6">My Orders</h1>
+
+                <!-- 🔍 Filter and Search -->
+                <div class="flex justify-center mb-6">
+                    <form method="get" class="w-full max-w-2xl flex flex-col sm:flex-row sm:items-end justify-center gap-3">
+                        <input type="text" name="search" value="{{ search_query }}"
+                               placeholder='Search by "Order #49" or product name'
+                               class="flex-1 px-4 py-2 border rounded text-sm" />
+
+                        <select name="status" class="px-3 py-2 border rounded text-sm">
+                            <option value="">-- All Statuses --</option>
+                            <option value="PENDING" {% if status_filter == "PENDING" %}selected{% endif %}>Pending</option>
+                            <option value="PROCESSING" {% if status_filter == "PROCESSING" %}selected{% endif %}>Processing</option>
+                            <option value="SHIPPED" {% if status_filter == "SHIPPED" %}selected{% endif %}>Shipped</option>
+                            <option value="DELIVERED" {% if status_filter == "DELIVERED" %}selected{% endif %}>Delivered</option>
+                            <option value="CANCELLED" {% if status_filter == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+                        </select>
+
+                        <button type="submit"
+                                class="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 text-sm">
+                            Apply
+                        </button>
+                    </form>
+                </div>
+
+
+            <!-- ⚠️ Messages -->
+            {% if invalid_order_search %}
+                <div class="bg-red-100 text-red-700 border-l-4 border-red-500 p-3 mb-4 rounded">
+                    ⚠️ Invalid search term "{{ search_query }}". Use Order #ID or Product name.
+                </div>
+            {% elif no_orders_found %}
+                <div class="bg-yellow-100 text-yellow-800 border-l-4 border-yellow-500 p-3 mb-4 rounded">
+                    No orders found matching your filters.
+                </div>
+            {% endif %}
+
+
+            {% if orders %}
+            <div class="space-y-6">
+                {% for order in orders %}
+                <div class="border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-lg hover:border-pink-500 hover:bg-pink-50 hover:scale-[1.01] transition duration-200 transform">
+                    <div class="mb-2">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h2 class="text-lg font-semibold text-gray-700">Order #{{ order.id }}</h2>
+                                <p class="text-sm text-gray-500">Placed on {{ order.created_at|date:"d M Y, H:i A" }}</p>
+                            </div>
+                            <span class="text-sm font-medium px-3 py-1 rounded-full
+                                {% if order.status == 'PENDING' %}
+                                    bg-yellow-100 text-yellow-700
+                                {% elif order.status == 'PROCESSING' %}
+                                    bg-blue-100 text-blue-700
+                                {% elif order.status == 'SHIPPED' %}
+                                    bg-indigo-100 text-indigo-700
+                                {% elif order.status == 'DELIVERED' %}
+                                    bg-green-100 text-green-700
+                                {% elif order.status == 'CANCELLED' %}
+                                    bg-red-100 text-red-700
+                                {% else %}
+                                    bg-gray-100 text-gray-600
+                                {% endif %}
+                            ">
+                                {{ order.status }}
+                            </span>
+                        </div>
+
+                        <p class="mt-2 text-green-700 text-sm font-medium">
+                            ✔️ Your order process is '<span class="uppercase">{{ order.status }}</span>' and payment is received successfully.
+                        </p>
+
+                        <p class="text-gray-700 text-sm">
+                            📦 The current status of your order from the supplier is:
+                            <strong class="text-gray-800">
+                                {% if order.status == "PENDING" %}
+                                    Pending
+                                {% elif order.status == "PROCESSING" %}
+                                    Processing
+                                {% elif order.status == "SHIPPED" %}
+                                    Shipped
+                                {% elif order.status == "DELIVERED" %}
+                                    Delivered
+                                {% elif order.status == "CANCELLED" %}
+                                    Cancelled
+                                {% elif order.status == "ORDERED" %}
+                                    Ordered
+                                {% else %}
+                                    {{ order.status }}
+                                {% endif %}
+                            </strong>
+                        </p>
+                    </div>
+
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        {% for item in order.items.all %}
+                        <li>
+                            • {{ item.product_variant.product.name }}
+                            ({{ item.product_variant.color }} / {{ item.product_variant.size }}) —
+                            {% if item.price_at_order < item.product_variant.price %}
+                            <s class="text-gray-400">₹{{ item.product_variant.price|floatformat:2 }}</s>
+                            {% endif %}
+                            ₹{{ item.price_at_order|floatformat:2 }} × {{ item.quantity }}
+                            = ₹{{ item.line_total|floatformat:2 }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                    <div class="mt-2 text-right text-gray-700 font-medium">
+                        Total: ₹{{ order.total_price|floatformat:2 }}
+                    </div>
+
+                    <div class="mt-2 text-xs text-gray-500 space-y-1">
+                        {% if order.razorpay_payment_id %}
+                        <p>Payment ID: {{ order.razorpay_payment_id }}</p>
+                        {% endif %}
+                        {% if order.razorpay_order_id %}
+                        <p>Razorpay Order ID: {{ order.razorpay_order_id }}</p>
+                        {% endif %}
+                        <p>Payment Method: Razorpay</p>
+                        <p>Discount Applied: ₹{{ order.total_discount|floatformat:2 }}</p>
+                    </div>
+
+                    <!-- ✅ Actions: Reorder and Cancel -->
+                    <div class="mt-4 flex flex-col gap-2 text-sm">
+                        <!-- 🔁 Reorder Links -->
+                        <ul class="space-y-1 text-gray-600 text-sm">
+                            {% for item in order.items.all %}
+                            <li>
+                                • {{ item.product_variant.product.name }} —
+                                <span class="italic">{{ item.product_variant.color }}, {{ item.product_variant.size }}</span>
+                                × {{ item.quantity }}
+                                {% if item.product_variant.product.is_available %}
+                                    <a href="{% url 'products:product_detail' slug=item.product_variant.product.slug %}"
+                                       class="text-pink-600 hover:underline ml-2">
+                                        Reorder
+                                    </a>
+                                {% else %}
+                                    <span class="text-gray-400 text-xs ml-2">(Unavailable)</span>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+
+                        <!-- ❌ Cancel Order Button -->
+                        {% if order.status in "PENDING PROCESSING ORDERED" %}
+                        <form method="post" action="{% url 'orders:user_cancel_order' order.id %}"
+                              @submit.prevent="cancelForm = $el; showCancelModal = true">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="text-sm text-red-600 hover:text-red-800 underline">
+                                Cancel Order
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- 📄 Pagination Controls -->
+            <div class="mt-6 flex justify-center space-x-2 text-sm text-gray-700">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+                       class="px-3 py-1 rounded border border-pink-500 text-pink-600 hover:bg-pink-100 hover:text-pink-800 transition duration-150">
+                        &laquo; Previous
+                    </a>
+                {% endif %}
+
+                <span class="px-3 py-1 text-gray-600">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+                       class="px-3 py-1 rounded border border-pink-500 text-pink-600 hover:bg-pink-100 hover:text-pink-800 transition duration-150">
+                        Next &raquo;
+                    </a>
+                {% endif %}
+            </div>
+
+            {% else %}
+            <p class="text-gray-600 text-center text-lg mt-10">You haven’t placed any orders yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 🪟 Cancel Confirmation Modal -->
+    <div x-show="showCancelModal" class="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center" x-cloak>
+        <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+            <h2 class="text-lg font-semibold text-red-600 mb-2">⚠️ Are you sure you want to cancel this order?</h2>
+            <p class="text-sm text-gray-700 mb-4">
+                Cancelling will restore stock and mark this order as cancelled. This action cannot be undone.
+            </p>
+            <div class="flex justify-end space-x-3">
+                <button @click="showCancelModal = false"
+                        class="px-4 py-1 text-sm rounded border border-gray-400 text-gray-700 hover:bg-gray-100">
+                    No, Keep Order
+                </button>
+                <button @click="cancelForm.submit(); showCancelModal = false"
+                        class="px-4 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+                    Yes, Cancel It
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Confirm Deletion</h2>
+  <p>Are you sure you want to delete user <strong>{{ user_to_delete.username }}</strong>?</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit">Confirm Delete</button>
+    <a href="{% url 'users:admin_user_list' %}">Cancel</a>
+  </form>
+{% endblock %}

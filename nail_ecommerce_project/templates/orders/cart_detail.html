@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4">
+  <h2 class="text-2xl font-bold text-pink-600 mb-6">🛒 Your Cart</h2>
+
+  {% if items %}
+    <table class="min-w-full bg-white border">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="py-2 px-4 text-left">Product</th>
+                <th class="py-2 px-4">Variant</th>
+                <th class="py-2 px-4">Qty</th>
+                <th class="py-2 px-4">Price</th>
+                <th class="py-2 px-4">Discounted</th>
+                <th class="py-2 px-4">Subtotal</th>
+                <th class="py-2 px-4">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr class="border-t {% if item.exceeds_stock %}bg-red-50{% endif %}">
+                <td class="px-4 py-2 text-sm font-medium text-gray-900">{{ item.product.name }}</td>
+                <td class="px-4 py-2 text-sm text-gray-700">{{ item.variant.size }} / {{ item.variant.color }}</td>
+
+                <td class="px-4 py-2 text-sm text-gray-800">
+                    {{ item.quantity }}
+                    {% if item.exceeds_stock %}
+                    <div class="text-xs text-red-600 mt-1">
+                        ⚠️ Only {{ item.available_quantity }} left
+                    </div>
+                    {% endif %}
+                </td>
+
+                <td class="px-4 py-2 text-sm text-gray-400 line-through">₹{{ item.unit_price }}</td>
+                <td class="px-4 py-2 text-sm text-green-600">₹{{ item.discounted_price }}</td>
+                <td class="px-4 py-2 text-sm font-semibold text-gray-900">₹{{ item.subtotal|floatformat:2 }}</td>
+
+                <td class="px-4 py-2 text-sm">
+                    <form method="post" action="{% url 'orders:remove_from_cart' item.variant_id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="text-red-600 hover:underline text-sm">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if any_exceeds_stock %}
+    <div class="mt-4 p-4 bg-red-100 border border-red-400 text-red-800 rounded">
+        ⚠️ <strong>Some items exceed available stock.</strong>
+        Please adjust quantities to proceed with checkout.
+    </div>
+    {% endif %}
+
+    <div class="text-right mb-4">
+      <p class="font-bold text-lg text-pink-600">Total: ₹{{ total_price|floatformat:2 }}</p>
+    </div>
+
+    <div class="flex justify-between">
+      <a href="{% url 'products:product_list' %}" class="text-sm text-gray-700 hover:underline" aria-label="Continue Shopping">
+        ← Continue Shopping
+      </a>
+      <a href="{% url 'orders:checkout_cart' %}"
+           class="bg-pink-600 text-white px-5 py-2 rounded hover:bg-pink-700 transition
+                  {% if any_exceeds_stock %}opacity-50 cursor-not-allowed pointer-events-none{% endif %}"
+           {% if any_exceeds_stock %}aria-disabled="true" tabindex="-1"{% endif %}>
+           Proceed to Checkout →
+        </a>
+    </div>
+  {% else %}
+    <p>Your cart is empty. <a href="{% url 'products:product_list' %}" class="text-pink-600 underline">Start shopping</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

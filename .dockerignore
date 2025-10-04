@@ -1,0 +1,23 @@
+# Exclude Python cache
+__pycache__/
+*.py[cod]
+
+# Exclude runtime logs
+logs/*.log
+logs/*.log.*  # For rotated logs like application.log.2025-07-15
+
+# Exclude other unwanted files/folders
+*.sqlite3
+venv/
+build/
+dist/
+*.egg-info
+*.pot
+*.mo
+*.DS_Store
+*.idea
+*.vscode
+pytest.ini
+query/
+.coverage
+tests_report/

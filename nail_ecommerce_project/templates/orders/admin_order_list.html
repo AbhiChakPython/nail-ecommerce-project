@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-6xl mx-auto px-4 py-6"
+     x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || 'orders' }">
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const url = new URL(window.location.href);
+            const tab = url.searchParams.get("tab");
+            const hash = url.hash;
+
+            if (tab === "inventory" && hash) {
+                const target = document.querySelector(hash);
+                if (target) {
+                    // Give the tab some time to render
+                    setTimeout(() => {
+                        target.scrollIntoView({ behavior: "smooth", block: "center" });
+                        // Optional highlight effect
+                        target.classList.add("ring", "ring-pink-500");
+                        setTimeout(() => {
+                            target.classList.remove("ring", "ring-pink-500");
+                        }, 2000);
+                    }, 300);
+                }
+            }
+        });
+    </script>
+
+    {% if low_stock_variants %}
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded">
+            <h2 class="text-lg font-bold mb-2">⚠️ Low Stock Alerts</h2>
+            <ul class="list-disc pl-6">
+                {% for variant in low_stock_variants %}
+                <li>
+                    <strong>{{ variant.product.name }}</strong> — {{ variant.size }} / {{ variant.color }}
+                    → <span class="font-semibold">{{ variant.stock_quantity }}</span> left
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <!-- 🧭 Tab buttons -->
+    <div class="flex space-x-4 mb-6">
+        <button @click="tab = 'orders'"
+                :class="{ 'font-bold underline text-pink-600': tab === 'orders' }"
+                class="text-gray-700 hover:text-pink-500">Manage Orders
+        </button>
+        <button @click="tab = 'inventory'"
+                :class="{ 'font-bold underline text-pink-600': tab === 'inventory' }"
+                class="text-gray-700 hover:text-pink-500">Manage Inventory
+        </button>
+    </div>
+
+    <!-- 📦 Manage Orders Tab -->
+    <div x-show="tab === 'orders'" x-cloak>
+        <h2 class="text-2xl font-bold text-pink-600 mb-4">Manage Orders</h2>
+
+        <!-- 🔍 Filter -->
+        <form method="get" class="mb-4 flex flex-wrap items-center space-x-2">
+            <input type="hidden" name="tab" value="orders">
+            <input type="text" name="search" value="{{ search_query }}"
+                   placeholder="Search by Order ID or Customer name/email"
+                   class="px-3 py-1 border rounded text-sm w-64" />
+            <label for="status" class="text-sm font-medium text-gray-700">Filter by Status:</label>
+            <select name="status" id="status" class="border rounded px-2 py-1 text-sm">
+                <option value="">All</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit"
+                    class="bg-pink-500 text-white px-3 py-1 rounded hover:bg-pink-600 text-sm">
+                Apply
+            </button>
+        </form>
+
+        <!-- ⚠️ Show messages *after* the search bar -->
+        {% if invalid_order_search %}
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded">
+                ⚠️ No order found matching "{{ search_query }}". Please check the Order number format.
+            </div>
+        {% elif no_orders_found %}
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 mb-4 rounded">
+                No orders found matching your filters.
+            </div>
+        {% endif %}
+
+        <!-- 🧾 Orders List -->
+        <div class="space-y-4">
+            {% for order in orders %}
+            <div class="bg-white shadow rounded p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Order #{{ order.id }}</h3>
+                        <p class="text-sm text-gray-600">Customer: {{ order.user.full_name }}</p>
+                        <p class="text-sm text-gray-600">Placed: {{ order.created_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-700 font-medium">Total: ₹{{ order.total_price|floatformat:2 }}</p>
+                        <p class="text-sm text-gray-500">Status: {{ order.status }}</p>
+                    </div>
+                </div>
+
+                <div class="mb-2 flex items-center space-x-2">
+                    <form method="post" action="{% url 'orders_admin:update_order_status' order.id %}?tab={{ active_tab }}&page={{ page_obj.number }}&search={{ search_query }}&status={{ request.GET.status }}">
+                        {% csrf_token %}
+                        <select name="status"
+                                class="text-sm border rounded px-2 py-1"
+                                {% if order.status == 'CANCELLED' or order.status == 'DELIVERED' %}disabled{% endif %}>
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit"
+                                {% if order.status == 'CANCELLED' or order.status == 'DELIVERED' %}
+                                    disabled class="bg-gray-400 text-white px-3 py-1 rounded cursor-not-allowed"
+                                {% else %}
+                                    class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
+                                {% endif %}>
+                            Update
+                        </button>
+
+                        {% if order.status == 'CANCELLED' or order.status == 'DELIVERED' %}
+                        <p class="text-xs text-gray-500 mt-1 italic">
+                            Status cannot be changed once the order is Cancelled or Delivered.
+                        </p>
+                        {% endif %}
+                    </form>
+                </div>
+
+                <div>
+                    <p class="text-sm font-semibold text-gray-700 mb-1">Items:</p>
+                    <ul class="text-sm text-gray-600 list-disc pl-5">
+                        {% for item in order.items.all %}
+                        <li>
+                            {{ item.product_variant.product.name }} — {{ item.product_variant.size }} / {{ item.product_variant.color }}
+                            (Qty: {{ item.quantity }})
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-sm text-gray-600">No orders available.</p>
+            {% endfor %}
+        </div>
+
+        <!-- 📄 Manage Order page Pagination Controls -->
+        <div class="mt-6 flex justify-center space-x-2 text-sm text-gray-700">
+            {% if page_obj.has_previous %}
+                <a href="?tab=orders&page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
+                   class="px-3 py-1 rounded border border-pink-500 text-pink-600 hover:bg-pink-100 hover:text-pink-800 transition duration-150">
+                    &laquo; Previous
+                </a>
+            {% endif %}
+
+            <span class="px-3 py-1 text-gray-600">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?tab=orders&page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
+                   class="px-3 py-1 rounded border border-pink-500 text-pink-600 hover:bg-pink-100 hover:text-pink-800 transition duration-150">
+                    Next &raquo;
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 🛠️ Manage Inventory Tab -->
+    <div x-show="tab === 'inventory'" x-cloak>
+        <h2 class="text-2xl font-bold text-pink-600 mb-4">Manage Inventory</h2>
+
+        <!-- 🔍 Inventory Filters -->
+        <form method="get" action="" class="mb-4 flex flex-wrap items-center space-x-2">
+            <input type="hidden" name="tab" value="inventory">
+            <input type="text" name="search" value="{{ search_query }}"
+                   placeholder="Search by product name"
+                   class="px-3 py-1 border rounded text-sm w-64">
+
+            <select name="availability" class="px-2 py-1 border rounded text-sm">
+                <option value="">All Status</option>
+                <option value="available" {% if availability_filter == 'available' %}selected{% endif %}>Available</option>
+                <option value="out_of_stock" {% if availability_filter == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                <option value="low_stock" {% if availability_filter == 'low_stock' %}selected{% endif %}>Low Stock (≤ 3)</option>
+            </select>
+
+            <button type="submit"
+                    class="bg-pink-500 text-white px-4 py-1 rounded text-sm hover:bg-pink-600">
+                Filter
+            </button>
+        </form>
+
+        <div class="space-y-4">
+            {% for variant in variant_page_obj %}
+            <div id="variant-{{ variant.id }}" class="bg-white shadow rounded p-4">
+                <div class="mb-2 flex items-center justify-between">
+                    <div>
+                        <span class="font-semibold text-gray-800">
+                            {{ variant.product.name }}
+                        </span>
+                        <span class="text-sm text-gray-500">
+                            — {{ variant.size }} / {{ variant.color }}
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        {% if variant.product.is_available %}
+                            <span class="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded">
+                                Available
+                            </span>
+                        {% else %}
+                            <span class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded">
+                                Out of Stock
+                            </span>
+                        {% endif %}
+
+                        {% if variant.stock_quantity <= 3 %}
+                            <span class="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2 py-1 rounded">
+                                Low Stock
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="post"
+                      action="{% url 'orders_admin:manage_inventory' %}?tab={{ active_tab }}&variant_page={{ variant_page_obj.number }}&search={{ search_query }}&availability={{ availability_filter }}"
+                      class="flex flex-wrap items-center space-x-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="variant_id" value="{{ variant.id }}">
+                    <input type="number" name="manual_stock_quantity" min="0"
+                           value="{{ variant.stock_quantity }}"
+                           class="w-20 px-2 py-1 border rounded text-center text-sm" />
+
+                    <select name="availability"
+                            class="ml-4 border rounded px-2 py-1 text-sm">
+                        <option value="true" {% if variant.product.is_available %}selected{% endif %}>Available</option>
+                        <option value="false" {% if not variant.product.is_available %}selected{% endif %}>Out of Stock</option>
+                    </select>
+
+                    <button type="submit"
+                            class="ml-3 bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 text-sm">
+                        Save
+                    </button>
+                </form>
+            </div>
+            {% empty %}
+            <p class="text-gray-600 text-sm">No product variants found.</p>
+            {% endfor %}
+        </div>
+
+        <!-- 🔁 Manage Inventory Pagination -->
+        <div class="mt-6 flex justify-center space-x-2 text-sm text-gray-700">
+            {% if variant_page_obj.has_previous %}
+                <a href="?tab=inventory&variant_page={{ variant_page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability_filter %}&availability={{ availability_filter }}{% endif %}"
+                   class="px-3 py-1 rounded border border-pink-500 text-pink-600 hover:bg-pink-100 hover:text-pink-800 transition duration-150">
+                    &laquo; Previous
+                </a>
+            {% endif %}
+
+            <span class="px-3 py-1 text-gray-600">
+                Page {{ variant_page_obj.number }} of {{ variant_page_obj.paginator.num_pages }}
+            </span>
+
+            {% if variant_page_obj.has_next %}
+                <a href="?tab=inventory&variant_page={{ variant_page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability_filter %}&availability={{ availability_filter }}{% endif %}"
+                   class="px-3 py-1 rounded border border-pink-500 text-pink-600 hover:bg-pink-100 hover:text-pink-800 transition duration-150">
+                    Next &raquo;
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

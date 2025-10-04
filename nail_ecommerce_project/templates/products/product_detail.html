@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load cache %}
+{% load static %}
+
+{% block content %}
+<div class="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="px-4 py-2 rounded text-white {{ message.tags|default:'bg-blue-600' }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <!-- 📸 Product Images -->
+        <div>
+            {% if request.user.is_superuser %}
+            <div class="mt-4">
+                <a href="{% url 'products:manage_gallery' slug=product.slug %}"
+                   class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow">
+                    🖼️ Manage Gallery
+                </a>
+            </div>
+            {% endif %}
+
+            {% if product.thumbnail %}
+            <!-- 🖼️ Featured Image -->
+            <img src="{{ product.thumbnail.url }}"
+                 alt="{{ product.name }}"
+                 class="w-full h-96 object-cover rounded shadow-sm">
+            {% endif %}
+
+            {% if product.gallery_images.all %}
+            <!-- Static Gallery Thumbnails -->
+            <div class="mt-4 flex gap-2 flex-wrap">
+                {% for img in product.gallery_images.all %}
+                <img src="{{ img.image.url }}" alt="Gallery Image"
+                     class="w-20 h-20 object-cover rounded border ring-1 ring-gray-300">
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 📝 Product Details -->
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ product.name }}</h1>
+
+            {% if user.is_superuser %}
+            <span class="inline-block bg-yellow-400 text-black text-xs font-semibold px-2 py-1 rounded">Admin Mode</span>
+            <p class="text-sm text-gray-600 mt-1 mb-2">You can edit or delete this product.</p>
+            {% endif %}
+
+            <p class="text-gray-600 mb-4">{{ product.description|linebreaks }}</p>
+
+            <!-- 💰 Price with Discount -->
+            {% with discounted=discounted_price %}
+            {% if discounted < product.variants.first.price %}
+            <p class="text-xl font-semibold text-red-600">
+                ₹{{ discounted }}
+                <span class="text-gray-400 line-through text-sm ml-2">
+                ₹{{ product.variants.first.price }}
+                </span>
+            </p>
+            {% else %}
+            <p class="text-xl font-semibold text-gray-800">
+                ₹{{ product.variants.first.price }}
+            </p>
+            {% endif %}
+            {% endwith %}
+
+            <!-- 🎨 Variant Selector -->
+            <form method="post" action="{% url 'orders:add_to_cart' %}" class="mt-6 space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+
+                {% if product.variants.exists %}
+                <label for="variant" class="block text-sm font-medium text-gray-700">Select Variant:</label>
+                <select name="variant_id" id="variant"
+                        class="w-full px-3 py-2 border rounded">
+                    {% for variant in product.variants.all %}
+                    <option value="{{ variant.id }}" {% if variant.available_quantity == 0 %}disabled{% endif %}>
+                        {{ variant.color }} / {{ variant.size }} — ₹{{ variant.price }}
+                        {% if variant.available_quantity > 0 %}
+                            (In Stock: {{ variant.available_quantity }})
+                        {% else %}
+                            (Out of Stock)
+                        {% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+
+                {% if request.user.is_superuser %}
+                <a href="{% url 'products:manage_variants' product.slug %}"
+                   class="inline-block bg-indigo-600 text-white px-4 py-2 mt-4 rounded hover:bg-indigo-700">
+                    Manage Variants
+                </a>
+                {% endif %}
+
+                <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity:</label>
+                <input type="number" name="quantity" id="quantity" value="1" min="1"
+                       class="w-24 px-3 py-2 border rounded">
+
+                <button type="submit"
+                        class="mt-4 inline-block bg-black text-white px-5 py-2 rounded hover:bg-gray-800">
+                    🛒 Add to Cart
+                </button>
+            </form>
+
+            <!-- 💳 Buy Now Button -->
+            <form method="post" action="{% url 'orders:buy_now' %}" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="variant_id" value="{{ product.variants.first.id }}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit"
+                        class="mt-2 inline-block bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700">
+                    💳 Buy Now
+                </button>
+            </form>
+
+            {% if added %}
+            <div class="mt-6 p-4 border rounded bg-green-50 border-green-300">
+                <p class="text-green-800 font-semibold mb-2">✅ Added to cart!</p>
+                <div class="flex gap-4">
+                    <a href="{% url 'products:product_list' %}"
+                       class="bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200">
+                        ➕ Add More Products
+                    </a>
+                    <a href="{% url 'orders:cart_detail' %}"
+                       class="bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700">
+                        🧾 Proceed to Checkout
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 📦 Dynamic Stock Info + Button Control -->
+    <div id="stock-info" class="mt-2 text-sm font-medium"></div>
+    <div id="stock-warning" class="mt-1 text-sm text-red-600 hidden">
+        ⚠️ This variant is currently out of stock and cannot be purchased.
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const variantSelect = document.getElementById('variant');
+            const stockInfo = document.getElementById('stock-info');
+            const stockWarning = document.getElementById('stock-warning');
+
+            const addToCartBtn = document.querySelector('form[action*="add_to_cart"] button[type="submit"]');
+            const buyNowForm = document.querySelector('form[action*="buy_now"]');
+            const buyNowBtn = buyNowForm.querySelector('button[type="submit"]');
+            const buyNowVariantInput = buyNowForm.querySelector('input[name="variant_id"]');
+
+            // Variant ID to stock mapping
+            const stockMap = {
+                {% for variant in product.variants.all %}
+                    "{{ variant.id }}": {{ variant.available_quantity }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            };
+
+            function updateVariantControls() {
+                const selectedId = variantSelect.value;
+                const available = stockMap[selectedId];
+
+                if (available === 0) {
+                    stockInfo.textContent = "⚠️ Out of stock";
+                    stockInfo.classList.remove("text-green-600");
+                    stockInfo.classList.add("text-red-600");
+
+                    addToCartBtn.disabled = true;
+                    buyNowBtn.disabled = true;
+
+                    addToCartBtn.classList.add("opacity-50", "cursor-not-allowed");
+                    buyNowBtn.classList.add("opacity-50", "cursor-not-allowed");
+
+                    stockWarning.classList.remove("hidden");
+                } else {
+                    stockInfo.textContent = `✅ In stock: ${available} units`;
+                    stockInfo.classList.remove("text-red-600");
+                    stockInfo.classList.add("text-green-600");
+
+                    addToCartBtn.disabled = false;
+                    buyNowBtn.disabled = false;
+
+                    addToCartBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                    buyNowBtn.classList.remove("opacity-50", "cursor-not-allowed");
+
+                    stockWarning.classList.add("hidden");
+                }
+
+                // Ensure buy now form always has current variant selected
+                if (buyNowVariantInput) {
+                    buyNowVariantInput.value = selectedId;
+                }
+            }
+
+            variantSelect.addEventListener('change', updateVariantControls);
+            updateVariantControls(); // Initial on page load
+        });
+    </script>
+</div>
+{% endblock %}

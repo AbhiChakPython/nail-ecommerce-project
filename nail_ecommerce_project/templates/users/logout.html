@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Logged Out | Nails Xtension Hub{% endblock %}
+
+{% block content %}
+<div class="h-screen flex items-center justify-center bg-pink-50">
+  <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+    <h2 class="text-2xl font-bold text-pink-600">You’ve been logged out</h2>
+    <p class="mt-2 text-gray-600">We hope to see you again soon!</p>
+    <a href="{% url 'users:login' %}" class="mt-4 inline-block bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700">
+      Login Again
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+<!-- templates/bookings/booking_list.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10">
+    <h2 class="text-2xl font-bold mb-4">Your Bookings</h2>
+    <a href="{% url 'bookings:booking_create' %}"
+       class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md mb-6">Add Another
+        Service</a>
+
+    {% if bookings %}
+    <ul class="space-y-4">
+        {% for booking in bookings %}
+        <li class="border rounded-lg p-4 shadow-sm bg-white">
+            <p><strong>Service:</strong> {{ booking.service.title }}</p>
+            <p><strong>Date:</strong> {{ booking.date }}</p>
+            <p><strong>Time:</strong> {{ booking.time_slot }}</p>
+            <p><strong>Status:</strong> {{ booking.status }}</p>
+            <p><strong>Type:</strong>
+                {% if booking.is_home_service %} Home Visit {% else %} At Salon {% endif %}
+            </p>
+            <a href="{% url 'bookings:booking_detail' booking.pk %}" class="text-blue-600 hover:underline text-sm">
+                View Details
+            </a>
+            {% if booking.number_of_customers %}
+            <p><strong>Number of Customers:</strong> {{ booking.number_of_customers }}</p>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No bookings yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

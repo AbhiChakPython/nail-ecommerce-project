@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>{% if account_deleted %}Goodbye!{% else %}Delete Your Account{% endif %}</h2>
+
+  {% if account_deleted %}
+    <p>Your account has been successfully deleted.</p>
+    <a href="{% url 'core:home' %}">Go to Home</a> |
+    <a href="{% url 'users:register' %}">Register Again</a>
+  {% else %}
+    <p>Are you sure you want to permanently delete your account?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">Yes, Delete My Account</button>
+      <a href="{% url 'users:profile' %}">Cancel</a>
+    </form>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Your Profile | Rupa's Nails Xtension Hub{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-pink-50 to-pink-100 py-10"
+     x-data="{ tab: 'info', loading: true, tabEdit: false }"
+     x-init="setTimeout(() => loading = false, 800)">
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-6 space-y-6 border border-pink-100">
+
+        <div class="flex items-center space-x-4">
+            <!-- Profile Icon / Initial Circle -->
+            <div class="h-12 w-12 rounded-full bg-pink-200 flex items-center justify-center text-pink-800 font-bold text-lg shadow">
+                {{ user.full_name|first|upper }}
+            </div>
+
+            <!-- Welcome Text -->
+            <h1 class="text-2xl font-bold text-pink-600">
+                Welcome, {{ user.full_name }}!
+            </h1>
+        </div>
+
+        <!-- Skeleton while loading -->
+        <template x-if="loading">
+            <div class="space-y-6 animate-pulse">
+                <div class="h-6 bg-gray-300 rounded w-1/2"></div>
+                <div class="h-4 bg-gray-300 rounded w-1/4"></div>
+                <div class="h-40 bg-gray-200 rounded"></div>
+            </div>
+        </template>
+
+        <!-- Actual content -->
+        <div x-show="!loading" x-cloak>
+
+            <!-- Tabs -->
+            <div class="flex space-x-4 border-b pb-2">
+                <button @click="tab = 'info'"
+                        :class="tab === 'info' ? 'text-pink-600 font-semibold' : 'text-gray-600'"
+                        class="hover:text-pink-600">
+                    Profile Info
+                </button>
+                <button @click="tab = 'activity'"
+                        :class="tab === 'activity' ? 'text-pink-600 font-semibold' : 'text-gray-600'"
+                        class="hover:text-pink-600">
+                    Recent Activity
+                </button>
+            </div>
+
+            <!-- Info Tab -->
+            <div x-show="tab === 'info'" x-cloak class="space-y-6 pt-4">
+                <div class="flex flex-col md:flex-row gap-6">
+
+                    <!-- Quick Links card -->
+                    <div class="flex-1 bg-white border border-pink-100 rounded-lg shadow p-4 space-y-4">
+                        <h2 class="text-lg font-semibold text-pink-700">Quick Links</h2>
+
+                        <ul class="space-y-2 text-sm text-pink-600">
+                            <li><a href="{% url 'services:service_list' %}" class="hover:underline">Book Services</a>
+                            </li>
+                            <li><a href="{% url 'bookings:booking_list_create' %}" class="hover:underline">Check My
+                                Bookings</a></li>
+                            <li><a href="{% url 'products:product_list' %}" class="hover:underline">Shop Products</a>
+                            </li>
+                            <li><a href="{% url 'orders:order_list' %}" class="hover:underline">Check My Orders</a></li>
+                        </ul>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-4 flex flex-col items-start space-y-3 text-sm">
+                            <a href="{% url 'users:password_reset' %}"
+                               class="inline-block px-3 py-1 rounded bg-yellow-500 text-white font-semibold shadow hover:bg-yellow-600 transition">
+                                🔑 Change Password
+                            </a>
+                            <a href="{% url 'users:delete_account' %}"
+                               class="inline-block px-3 py-1 rounded bg-red-600 text-white font-semibold shadow hover:bg-red-700 transition">
+                                ❌ Close My Account
+                            </a>
+                        </div>
+
+                        {% if request.user.is_superuser %}
+                        <hr class="my-4">
+                        <a href="{% url 'users:admin_user_list' %}"
+                           class="inline-block px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 shadow">
+                            🛠️ Manage Users
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Your Information card -->
+                    <div class="flex-1 bg-white border border-pink-100 rounded-lg shadow p-4 space-y-2 text-sm">
+                        <h2 class="text-lg font-semibold text-pink-700 mb-2">Your Information</h2>
+                        <p><strong>Full Name:</strong> {{ user.full_name }}</p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        <p><strong>Phone:</strong> {{ user.phone_number|default:"Not Provided" }}</p>
+                        {% if user.address %}
+                        <p><strong>Address:</strong></p>
+                        <ul class="ml-4 list-disc text-gray-700">
+                            <li>{{ user.address.address_line1 }}</li>
+                            <li>{{ user.address.address_line2 }}</li>
+                            {% if user.address.landmark %}
+                            <li>Landmark: {{ user.address.landmark }}</li>
+                            {% endif %}
+                            <li>{{ user.address.city }} - {{ user.address.pincode }}</li>
+                            <li>{{ user.address.state }}</li>
+                            {% if user.address.use_for_home_service %}
+                            <li><span class="text-green-600 font-semibold">✔ Used for Home Service</span></li>
+                            {% endif %}
+                        </ul>
+                        {% else %}
+                        <p><strong>Address:</strong> Not Provided</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Collapsible Edit Section -->
+                <div x-data="{ openEdit: false }" class="mt-6 border-t pt-4">
+                    <button @click="openEdit = !openEdit"
+                            class="flex items-center text-pink-600 font-semibold focus:outline-none transition">
+                        <svg :class="{'transform rotate-90': openEdit}" class="h-4 w-4 mr-2 transition-transform"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                        Edit Your Info
+                    </button>
+
+                    <div x-show="openEdit" x-cloak class="mt-4">
+                        <form method="post" x-data="{ submitting: false }"
+                              @submit.prevent="submitting = true; $el.submit()" class="space-y-4">
+                            {% csrf_token %}
+
+                            <!-- Full Name -->
+                            <div>
+                                <label for="full_name" class="block text-gray-700">Full Name</label>
+                                <input type="text" name="full_name" id="full_name"
+                                       value="{{ form.full_name.value|default_if_none:'' }}"
+                                       class="w-full border rounded px-3 py-2" required>
+                                {% if form.full_name.errors %}
+                                <p class="text-sm text-red-600">{{ form.full_name.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="email" class="block text-gray-700">Email</label>
+                                <input type="email" name="email" id="email"
+                                       value="{{ form.email.value|default_if_none:'' }}"
+                                       class="w-full border rounded px-3 py-2" required>
+                                {% if form.email.errors %}
+                                <p class="text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Phone -->
+                            <div>
+                                <label for="phone_number" class="block text-gray-700">Phone Number</label>
+                                <input type="text" name="phone_number" id="phone_number"
+                                       value="{{ form.phone_number.value|default_if_none:'' }}"
+                                       class="w-full border rounded px-3 py-2" required>
+                                {% if form.phone_number.errors %}
+                                <p class="text-sm text-red-600">{{ form.phone_number.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Address -->
+                            <div>
+                                <label for="address_line1" class="block text-gray-700">Flat / House No.</label>
+                                <input type="text" name="address_line1" id="address_line1"
+                                       value="{{ address_form.address_line1.value|default_if_none:'' }}"
+                                       class="w-full border rounded px-3 py-2" required>
+                                {% if address_form.address_line1.errors %}
+                                <p class="text-sm text-red-600">{{ address_form.address_line1.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="address_line2" class="block text-gray-700">Street / Area</label>
+                                <input type="text" name="address_line2" id="address_line2"
+                                       value="{{ address_form.address_line2.value|default_if_none:'' }}"
+                                       class="w-full border rounded px-3 py-2" required>
+                                {% if address_form.address_line2.errors %}
+                                <p class="text-sm text-red-600">{{ address_form.address_line2.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="landmark" class="block text-gray-700">Landmark</label>
+                                <input type="text" name="landmark" id="landmark"
+                                       value="{{ address_form.landmark.value|default_if_none:'' }}"
+                                       class="w-full border rounded px-3 py-2">
+                                {% if address_form.landmark.errors %}
+                                <p class="text-sm text-red-600">{{ address_form.landmark.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="city" class="block text-gray-700">City</label>
+                                    <input type="text" name="city" id="city"
+                                           value="{{ address_form.city.value|default_if_none:'' }}"
+                                           class="w-full border rounded px-3 py-2" required>
+                                    {% if address_form.city.errors %}
+                                    <p class="text-sm text-red-600">{{ address_form.city.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="state" class="block text-gray-700">State</label>
+                                    <input type="text" name="state" id="state"
+                                           value="{{ address_form.state.value|default_if_none:'' }}"
+                                           class="w-full border rounded px-3 py-2" required>
+                                    {% if address_form.state.errors %}
+                                    <p class="text-sm text-red-600">{{ address_form.state.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="pincode" class="block text-gray-700">Pincode</label>
+                                <input type="text" name="pincode" id="pincode"
+                                       value="{{ address_form.pincode.value|default_if_none:'' }}"
+                                       class="w-full border rounded px-3 py-2" required>
+                                {% if address_form.pincode.errors %}
+                                <p class="text-sm text-red-600">{{ address_form.pincode.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex items-center mt-2">
+                                <input type="checkbox" name="use_for_home_service" id="use_for_home_service"
+                                       class="h-4 w-4 text-pink-600 border-gray-300 focus:ring-pink-500"
+                                       {% if address_form.use_for_home_service.value %}checked{% endif %}>
+                                <label for="use_for_home_service" class="ml-2 text-sm text-gray-700">
+                                    Use this address for home service
+                                </label>
+                            </div>
+
+                            <button type="submit"
+                                    class="px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700"
+                                    :disabled="submitting">
+                                <template x-if="!submitting"><span>Save Changes</span></template>
+                                <template x-if="submitting"><span>Saving...</span></template>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Tab -->
+            <div x-show="tab === 'activity'" x-cloak class="space-y-6 pt-4">
+                <!-- Recent Bookings -->
+                <div class="mb-10">
+                    <h3 class="text-xl font-semibold mb-3">Recent Bookings</h3>
+                    {% if recent_bookings %}
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        {% for booking in recent_bookings %}
+                        <li class="p-3 border rounded bg-gray-50">
+                            <strong>{{ booking.service.name }}</strong> on {{ booking.date }} at {{ booking.time }}
+                            - Status: {{ booking.status }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-gray-500">You have no recent bookings.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Recent Orders -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3">Recent Orders</h3>
+                    {% if recent_orders %}
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        {% for order in recent_orders %}
+                        <li class="p-3 border rounded bg-gray-50">
+                            <strong>Order #{{ order.id }}</strong> - Placed on {{ order.created_at|date:"M d, Y" }}<br>
+                            Status: {{ order.status }} | Total: ₹{{ order.total_price }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-gray-500">You have no recent orders.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

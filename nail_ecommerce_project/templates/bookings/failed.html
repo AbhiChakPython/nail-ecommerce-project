@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-xl mx-auto mt-10 p-6 bg-white rounded-xl shadow text-center">
+    <h2 class="text-2xl font-bold text-red-600 mb-4">❌ Payment Failed</h2>
+    <p class="text-gray-700 mb-2">We couldn’t process your payment for booking <strong>#{{ booking.id }}</strong>.</p>
+
+    <div class="mt-4 p-4 bg-red-50 border border-red-200 text-left rounded">
+        <p><strong>💅 Service:</strong> {{ booking.service.title }}</p>
+        <p><strong>📅 Date:</strong> {{ booking.date }}</p>
+        <p><strong>⏰ Time Slot:</strong> {{ booking.time_slot }}</p>
+        <p><strong>👥 No. of Customers:</strong> {{ booking.number_of_customers }}</p>
+        {% if booking.is_home_service %}
+        <p><strong>🏠 Home Visit:</strong> Yes</p>
+        {% endif %}
+        <p class="mt-2 text-red-600 font-medium">Reason: Payment could not be verified or was cancelled.</p>
+    </div>
+
+    <div class="mt-6">
+        <a href="{% url 'bookings:checkout' booking.id %}"
+           class="inline-block bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-6 rounded shadow transition duration-300">
+            🔁 Try Payment Again
+        </a>
+        <a href="{% url 'bookings:booking_list_create' %}"
+           class="ml-4 inline-block text-pink-600 underline hover:text-pink-800 transition duration-300">
+            Go to My Bookings
+        </a>
+    </div>
+</div>
+{% endblock %}

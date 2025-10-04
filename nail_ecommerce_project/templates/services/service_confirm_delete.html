@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-xl mx-auto p-6 bg-white shadow-md rounded-md mt-10 text-center">
+    <h2 class="text-xl font-semibold text-red-600 mb-4">Confirm Delete</h2>
+    <p>Are you sure you want to delete the service: <strong>{{ object.title }}</strong>?</p>
+    <form method="post" class="mt-6">
+        {% csrf_token %}
+        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+            Yes, Delete
+        </button>
+        <a href="{% url 'services:service_list' %}" class="ml-4 text-gray-600 hover:underline">Cancel</a>
+    </form>
+</div>
+{% endblock %}

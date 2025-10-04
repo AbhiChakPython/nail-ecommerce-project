@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ mobileMenuOpen: false }">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Rupa’s Nails Xtension Hub{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    {% load static %}
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
+    <link rel="manifest" href="{% static 'images/site.webmanifest' %}">
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}">
+    <meta name="theme-color" content="#ec4899"> <!-- A pink shade -->
+</head>
+<body class="bg-pink-50 text-gray-800 min-h-screen flex flex-col font-sans">
+
+<!-- Navbar -->
+<header class="bg-gradient-to-r from-pink-100 to-pink-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <a href="{% url 'core:home' %}" class="flex items-center space-x-2">
+            <img src="{% static 'images/logo.webp' %}" alt="Rupa's Nails Xtension Hub" class="h-8 w-8">
+            <span class="text-xl font-bold text-pink-600">Rupa’s Nails Xtension Hub</span>
+        </a>
+
+        <nav class="space-x-6 hidden md:flex text-sm font-medium text-gray-700">
+            <a href="{% url 'products:product_list' %}"
+               class="{% if request.resolver_match.url_name == 'product_list' %}text-pink-600 font-semibold{% else %}hover:text-pink-600 transition{% endif %}">
+                Products
+            </a>
+
+            {% if user.is_authenticated and not user.is_superuser %}
+            <a href="{% url 'orders:cart_detail' %}"
+               class="{% if request.resolver_match.url_name == 'cart_detail' %}text-pink-600 font-semibold{% else %}hover:text-pink-600 transition{% endif %}">
+                View Cart
+            </a>
+            {% endif %}
+
+            <a href="{% url 'services:service_list' %}"
+               class="{% if request.resolver_match.url_name == 'service_list' %}text-pink-600 font-semibold{% else %}hover:text-pink-600 transition{% endif %}">
+                Services
+            </a>
+
+            {% if user.is_authenticated %}
+            <a href="{% url 'users:profile' %}"
+               class="{% if request.resolver_match.url_name == 'profile' %}text-pink-600 font-semibold{% else %}hover:text-pink-600 transition{% endif %}">
+                Profile
+            </a>
+            <form method="post" action="{% url 'users:logout' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="text-sm font-medium text-gray-700 hover:text-pink-600 transition bg-transparent border-none cursor-pointer px-0">
+                    Logout
+                </button>
+            </form>
+            {% else %}
+            <a href="{% url 'users:login' %}" class="hover:text-pink-600 transition">Login</a>
+            <a href="{% url 'users:register' %}" class="hover:text-pink-600 transition">Register</a>
+            {% endif %}
+
+            {% if user.is_superuser %}
+            <a href="{% url 'analytics:dashboard' %}" class="hover:text-pink-600 transition">Dashboard (Analytics)</a>
+            {% endif %}
+
+            {% if request.user.is_staff %}
+            <a href="{% url 'orders_admin:order_list' %}"
+               class="{% if request.resolver_match.url_name == 'order_list' %}text-pink-600 font-semibold{% else %}hover:text-pink-600 transition{% endif %}">
+                Manage Orders/Inventory
+            </a>
+            <a href="{% url 'bookings_admin:bookings_list' %}"
+               class="{% if request.resolver_match.url_name == 'bookings_list' %}text-pink-600 font-semibold{% else %}hover:text-pink-600 transition{% endif %}">
+                Manage Bookings
+            </a>
+            {% endif %}
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-pink-600 focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round"
+                      stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <!-- Mobile Menu -->
+    <div x-show="mobileMenuOpen" class="md:hidden px-4 pb-4 space-y-2 text-sm">
+        <a href="{% url 'products:product_list' %}"
+           class="{% if request.resolver_match.url_name == 'product_list' %}text-pink-600 font-semibold{% else %}hover:text-pink-600{% endif %}">Products</a>
+        <a href="{% url 'services:service_list' %}"
+           class="{% if request.resolver_match.url_name == 'service_list' %}text-pink-600 font-semibold{% else %}hover:text-pink-600{% endif %}">Services</a>
+
+        {% if user.is_authenticated %}
+        <a href="{% url 'users:profile' %}"
+           class="{% if request.resolver_match.url_name == 'profile' %}text-pink-600 font-semibold{% else %}hover:text-pink-600{% endif %}">Profile</a>
+        <form method="post" action="{% url 'users:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="hover:text-pink-600 bg-transparent border-none cursor-pointer">
+                Logout
+            </button>
+        </form>
+        {% else %}
+        <a href="{% url 'users:login' %}" class="block py-2 hover:text-pink-600">Login</a>
+        <a href="{% url 'users:register' %}" class="block py-2 hover:text-pink-600">Register</a>
+        {% endif %}
+    </div>
+</header>
+
+<!-- Flash Messages -->
+<div class="max-w-4xl mx-auto mt-4 px-4">
+    {% if messages %}
+    <ul class="space-y-2">
+        {% for message in messages %}
+        <li class="p-3 rounded text-sm font-medium
+                               {% if message.tags == 'success' %}
+                                   bg-green-100 text-green-800
+                               {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                   bg-red-100 text-red-800
+                               {% else %}
+                                   bg-blue-100 text-blue-800
+                               {% endif %}">
+            {{ message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+
+<!-- Page Content -->
+<main class="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
+
+    {% if request.resolver_match.url_name == 'home' and request.resolver_match.namespace == 'core' %}
+    {% if user.is_authenticated %}
+    <div class="flex items-center justify-center mb-6 space-x-3">
+        <div class="w-10 h-10 bg-pink-400 text-white font-bold rounded-full flex items-center justify-center text-lg">
+            {{ user.full_name|default:user.username|first|upper }}
+        </div>
+        <p class="text-lg font-bold text-pink-700">
+            Welcome, {{ user.full_name|default:user.username }}!
+        </p>
+    </div>
+    {% else %}
+    <p class="text-center text-lg font-semibold text-pink-500 mb-6">
+        Welcome, Guest!
+    </p>
+    {% endif %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+</main>
+
+
+<!-- Footer -->
+<footer class="bg-pink-100 border-t mt-auto py-4 text-center text-xs text-pink-700">
+    &copy; {% now "Y" %} Rupa’s Nails Xtension Hub. All rights reserved.
+</footer>
+<script>
+  setTimeout(() => {
+    document.querySelectorAll('ul li.bg-green-100, ul li.bg-red-100, ul li.bg-blue-100')
+      .forEach(el => el.style.display = 'none');
+  }, 3000);
+</script>
+</body>
+</html>

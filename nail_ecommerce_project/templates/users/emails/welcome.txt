@@ -1,0 +1,10 @@
+Hi {{ user.get_full_name|default:user.username }},
+
+Welcome to Rupa's Nails Xtension Hub! 🎉
+
+We’re thrilled to have you on board. Your account has been created successfully.
+
+Explore our wide range of nail services and products and feel free to reach out if you need help.
+
+Thank you,
+Rupa’s Nails Team

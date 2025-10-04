@@ -1,0 +1,39 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*.sqlite3
+
+# Environment
+venv/
+.env.*
+*.env
+
+# IDE
+.idea/
+
+# Media (keep folders, ignore content)
+media/*
+!media/.gitignore
+!media/products/
+!media/services/
+
+media/products/*
+!media/products/.gitignore
+
+media/services/*
+!media/services/.gitignore
+
+# Staticfiles (collected assets)
+staticfiles/
+
+# Logs
+logs/
+*.log
+
+# Mac/Windows metadata
+.DS_Store
+Thumbs.db
+
+personal/
+
+!*.example

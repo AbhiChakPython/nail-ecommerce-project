@@ -1,0 +1,32 @@
+<!-- templates/bookings/booking_detail.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-xl mx-auto mt-10 bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-4">Booking Details</h2>
+    <ul class="space-y-2">
+        <li><strong>Service:</strong> {{ booking.service.title }}</li>
+        <li><strong>Date:</strong> {{ booking.date }}</li>
+        <li><strong>Time:</strong> {{ booking.time_slot }}</li>
+        <li><strong>Status:</strong> {{ booking.status }}</li>
+        <li><strong>Staff:</strong> {{ booking.staff|default:"Not assigned yet" }}</li>
+        {% if booking.notes %}
+        <li><strong>Notes:</strong> {{ booking.notes }}</li>
+        {% endif %}
+        <li><strong>Service Type:</strong>
+            {% if booking.is_home_service %}
+            Home Visit
+            {% else %}
+            At Salon
+            {% endif %}
+        </li>
+        {% if booking.number_of_customers %}
+        <li><strong>Number of Customers:</strong> {{ booking.number_of_customers }}</li>
+        {% endif %}
+    </ul>
+    <div class="mt-6">
+        <a href="{% url 'bookings:booking_list_create' %}" class="text-sm text-blue-500 hover:underline">Back to
+            list</a>
+    </div>
+</div>
+{% endblock %}
